@@ -6,9 +6,11 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"math/rand"
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -73,9 +75,6 @@ type rootResponse struct {
 func handleRoot(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("content-type", "application/json")
 
-	_, span := tracer.Start(req.Context(), "handleRoot")
-	defer span.End()
-
 	ret := rootResponse{
 		Now:       time.Now().UnixMicro(),
 		URI:       req.RequestURI,
@@ -92,21 +91,64 @@ func handleRoot(w http.ResponseWriter, req *http.Request) {
 	w.Write(j)
 }
 
-func (s *srv) routes(r *mux.Router) {
-	r.PathPrefix("/").HandlerFunc(handleRoot).Methods(http.MethodGet)
+type handleRandomErrorResponse struct {
+	Now     int64   `json:"now"`
+	Chance  float64 `json:"chance"`
+	Point   float64 `json:"point"`
+	Message string  `json:"message"`
+}
 
+func handleRandomError(w http.ResponseWriter, req *http.Request) {
+	chance := req.FormValue("chance")
+	if chance == "" {
+		chance = "0.25"
+	}
+	chanceVal, err := strconv.ParseFloat(chance, 64)
+	if err != nil {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		return
+	}
+	point := rand.Float64()
+
+	ret := handleRandomErrorResponse{
+		Now:    time.Now().UnixMicro(),
+		Chance: chanceVal,
+		Point:  point,
+	}
+
+	var code int
+	if chanceVal > point {
+		code = http.StatusInternalServerError
+		ret.Message = "Random failure!"
+	} else {
+		code = http.StatusOK
+		ret.Message = "Success!"
+	}
+
+	j, err := json.Marshal(ret)
+	if err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		return
+	}
+
+	w.WriteHeader(code)
+	w.Write(j)
+}
+
+func (s *srv) routes(r *mux.Router) {
+	r.Path("/randomResult").HandlerFunc(handleRandomError).Methods(http.MethodGet)
 }
 
 func runHTTPServer(ctx context.Context, healthchecker *health.Health) {
 	s := &srv{
 		listenPort: 8000,
 	}
-
 	r := mux.NewRouter()
-	// added first because order matters.
-	r.HandleFunc("/health", healthchecker.HTTPHandler()).Methods(http.MethodGet)
 
+	// Order matters.
+	r.HandleFunc("/health", healthchecker.HTTPHandler()).Methods(http.MethodGet)
 	s.routes(r)
+	r.PathPrefix("/").HandlerFunc(handleRoot).Methods(http.MethodGet)
 
 	r.Use(loggingMiddleware)
 	r.Use(otelmux.Middleware("go-demo-web"))
