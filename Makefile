@@ -59,7 +59,7 @@ local: $(addprefix bin/,$(BINARIES))
 
 bin/%:: ${all_deps}
 	@[ -d bin ] || mkdir bin
-	go build -ldflags="-s -w" -o $@ app/$(@F)/*.go
+	CGO_ENABLED=0 go build -ldflags="-s -w" -o $@ app/$(@F)/*.go
 
 #
 # Multi-architecture image builds
