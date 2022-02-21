@@ -34,19 +34,19 @@ COPY . .
 ARG TARGETOS
 ARG TARGETARCH
 RUN mkdir /out
-RUN GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -ldflags="-s -w" -o /out/go-web-server app/go-web-server/*.go
+RUN GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -ldflags="-s -w" -o /out/go-demo-web app/go-demo-web/*.go
 
 FROM scratch AS base-image
 
 #
-# Build the go-web-server image.  This should be a --target on docker build.
+# Build the go-demo-web image.  This should be a --target on docker build.
 #
-FROM base-image AS go-web-server-image
+FROM base-image AS go-demo-web-image
 WORKDIR /app
-COPY --from=build-binaries /out/go-web-server /app
+COPY --from=build-binaries /out/go-demo-web /app
 ARG GIT_BRANCH
 ENV GIT_BRANCH=${GIT_BRANCH}
 ARG GIT_HASH
 ENV GIT_HASH=${GIT_HASH}
 EXPOSE 8090
-CMD ["/app/go-web-server"]
+CMD ["/app/go-demo-web"]

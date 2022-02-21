@@ -24,12 +24,12 @@ IMAGE_PREFIX=docker.flame.org/library/
 #
 
 # These are targets for "make local"
-BINARIES = go-web-server
+BINARIES = go-demo-web
 
 # These are the targets for Docker images, used both for the multi-arch and
 # single (local) Docker builds.
 # Dockerfiles should have a target that ends in -image, e.g. stormdriver-image.
-IMAGE_TARGETS = go-web-server
+IMAGE_TARGETS = go-demo-web
 #
 # Below here lies magic...
 #
