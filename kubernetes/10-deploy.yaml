@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: go-demo-web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: go-demo-web
+  template:
+    metadata:
+      labels:
+        app: go-demo-web
+    spec:
+      containers:
+        - name: go-demo-web-container
+          image: docker.flame.org/library/go-demo-web:latest
+          imagePullPolicy: Always
+          args:
+            - /app/go-demo-web
+            - '-jaeger-endpoint'
+            - http://jaeger-collector.jaeger.svc.cluster.local:14268/api/traces
+          resources:
+            limits:
+              cpu: 200m
+              memory: 32Mi
+            requests:
+              cpu: 100m
+              memory: 16Mi
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+              scheme: HTTP
+            initialDelaySeconds: 3
+            timeoutSeconds: 1
+            periodSeconds: 3
+            successThreshold: 1
+            failureThreshold: 3
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  revisionHistoryLimit: 10
+  progressDeadlineSeconds: 600
