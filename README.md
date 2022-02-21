@@ -4,7 +4,7 @@ A simple web server, providing some simple API endpoints with randomized failure
 # Usage
 
 ```
-make && ./bin/go-web-server
+make && ./bin/go-demo-web
 
 curl localhost:8000/foo
 ```
@@ -24,5 +24,5 @@ is set to a [Jeager](https://www.jaegertracing.io/) trace endpoint, HTTP activit
 
 Example:
 ```
-./bin/go-web-server --jaeger-endpoint http://localhost:14268/api/traces
+./bin/go-demo-web --jaeger-endpoint http://localhost:14268/api/traces
 ```
